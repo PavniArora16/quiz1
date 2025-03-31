@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCQ Quiz Platform</title>
+</head>
+<body>
+    <h1>Welcome to the MCQ Quiz Platform</h1>
+
+    <details>
+        <summary>Create a Quiz</summary>
+        <form id="quiz-form">
+            <input type="text" id="quiz-title" placeholder="Quiz Title" required>
+            <div id="questions-container">
+                <div class="question">
+                    <input type="text" placeholder="Question 1" required>
+                    <input type="text" placeholder="A. Option 1" required>
+                    <input type="text" placeholder="B. Option 2" required>
+                    <input type="text" placeholder="C. Option 3" required>
+                    <input type="text" placeholder="D. Option 4" required>
+                    <select required>
+                        <option value="" disabled selected>Correct Answer</option>
+                        <option value="0">A</option>
+                        <option value="1">B</option>
+                        <option value="2">C</option>
+                        <option value="3">D</option>
+                    </select>
+                </div>
+            </div>
+            <button type="button" onclick="addQuestion()">Add Question</button>
+            <button type="submit">Save Quiz</button>
+        </form>
+    </details>
+
+    <details>
+        <summary>Take a Quiz</summary>
+        <form id="quiz-section">
+            <div id="quiz-container"></div>
+            <button type="button" onclick="submitQuiz()">Submit</button>
+            <p id="quiz-result"></p>
+        </form>
+    </details>
+    
+<style>
+    body {
+    font-family: 'Arial', sans-serif;
+    text-align: center;
+    background: #f8f9fa;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+
+button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+button:hover {
+    background: black;
+}
+
+details {
+    background: white;
+    margin: 10px auto;
+    width: 60%;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+
+summary {
+    color: Black;
+    padding: 12px 18px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+}
+summary:hover{
+  background:blue;
+}
+
+input, select {
+    display: block;
+    width: 90%;
+    margin: 10px auto;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+</style>
+
+<script>
+    // quiz load
+document.addEventListener("DOMContentLoaded", loadQuiz);
+
+// Create Quiz
+function addQuestion() {
+    let container = document.getElementById("questions-container");
+    let questionNumber = container.children.length + 1;
+
+    // question block
+    let questionDiv = document.createElement("div");
+    questionDiv.classList.add("question");
+
+    // Create question and options
+    questionDiv.innerHTML = `
+        <input type="text" placeholder="Question ${questionNumber}" required>
+        <input type="text" placeholder="A. Option 1" required>
+        <input type="text" placeholder="B. Option 2" required>
+        <input type="text" placeholder="C. Option 3" required>
+        <input type="text" placeholder="D. Option 4" required>
+        <select required>
+            <option value="" disabled selected>Correct Answer</option>
+            <option value="0">A</option>
+            <option value="1">B</option>
+            <option value="2">C</option>
+            <option value="3">D</option>
+        </select>
+    `;
+
+    // Add the new question to the container
+    container.appendChild(questionDiv);
+}
+
+// Function to save the quiz
+document.getElementById("quiz-form").onsubmit = function (event) {
+    event.preventDefault(); // Prevent page refresh
+
+    let quizTitle = document.getElementById("quiz-title").value;
+    let questionsList = [];
+
+    let allQuestions = document.querySelectorAll("#questions-container .question");
+
+    // Loop through each question block
+    allQuestions.forEach((div) => {
+        let questionText = div.children[0].value;
+        let options = [
+            div.children[1].value,
+            div.children[2].value,
+            div.children[3].value,
+            div.children[4].value
+        ];
+        let correctAnswer = div.children[5].value;
+
+        // Only save complete questions
+        if (questionText && options.every(option => option)) {
+            questionsList.push({ questionText, options, correctAnswer });
+        }
+    });
+
+    // Save quiz data to local storage
+    localStorage.setItem("quiz", JSON.stringify({ quizTitle, questionsList }));
+    alert("Quiz Saved!");
+    loadQuiz(); // Refresh quiz display
+};
+
+// Function to load the quiz for taking
+function loadQuiz() {
+    let savedQuiz = JSON.parse(localStorage.getItem("quiz"));
+    let quizContainer = document.getElementById("quiz-container");
+    quizContainer.innerHTML = ""; // Clear previous content
+
+    if (savedQuiz) {
+        quizContainer.innerHTML += `<h3>${savedQuiz.quizTitle}</h3>`;
+
+        // Loop through each question and display it
+        savedQuiz.questionsList.forEach((q, index) => {
+            let questionHTML = `<p><strong>Q${index + 1}:</strong> ${q.questionText}</p>`;
+            let optionsHTML = "";
+
+            // Add multiple-choice options
+            q.options.forEach((option, optionIndex) => {
+                optionsHTML += `
+                    <label>
+                        <input type="radio" name="q${index}" value="${optionIndex}">
+                        ${String.fromCharCode(65 + optionIndex)}. ${option}
+                    </label><br>
+                `;
+            });
+
+            quizContainer.innerHTML += questionHTML + optionsHTML;
+        });
+    } else {
+        quizContainer.innerHTML = "<p>No quiz available. Create one first!</p>";
+    }
+}
+
+// Function to submit quiz and check answers
+function submitQuiz() {
+    let savedQuiz = JSON.parse(localStorage.getItem("quiz"));
+    if (!savedQuiz) {
+        alert("No quiz found.");
+        return;
+    }
+
+    let correctAnswers = 0;
+    let totalQuestions = savedQuiz.questionsList.length;
+
+    // Loop through each question and check answers
+    savedQuiz.questionsList.forEach((q, index) => {
+        let selectedAnswer = document.querySelector(`input[name="q${index}"]:checked`);
+        if (selectedAnswer && selectedAnswer.value === q.correctAnswer) {
+            correctAnswers++;
+        }
+    });
+
+    // Show result
+    document.getElementById("quiz-result").textContent =
+        `You got ${correctAnswers} out of ${totalQuestions} correct!`;
+}
+
+</script>
+</body>
+</html>
+
